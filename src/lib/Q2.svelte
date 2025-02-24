@@ -152,11 +152,11 @@
 
         gradient.append("stop")
           .attr("offset", "0%")
-          .attr("stop-color", color(genres[d.source.index]));
+          .attr("stop-color", color(genres[d.target.index]));
 
         gradient.append("stop")
           .attr("offset", "100%")
-          .attr("stop-color", color(genres[d.target.index]));
+          .attr("stop-color", color(genres[d.source.index]));
 
         return `url(#${gradientId})`;
       })
