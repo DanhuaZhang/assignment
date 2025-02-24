@@ -75,6 +75,22 @@
       .append("g")
       .attr("transform", `translate(${width / 2},${height / 2})`);
 
+    const gradient = svgElement.append("defs")
+      .append("linearGradient")
+      .attr("id", "arcGradient")
+      .attr("x1", "0%")
+      .attr("y1", "0%")
+      .attr("x2", "100%")
+      .attr("y2", "100%");
+
+    gradient.append("stop")
+      .attr("offset", "0%")
+      .attr("stop-color", "blue");
+
+    gradient.append("stop")
+      .attr("offset", "100%")
+      .attr("stop-color", "red");
+
     const tooltip = d3.select("body").append("div")
       .attr("class", "tooltip")
       .style("position", "absolute")
@@ -98,6 +114,7 @@
         d3.select(this).style("fill", "yellow").raise();
         tooltip.style("visibility", "visible")
           .text(`${genres[d.index]}: ${d.value}`);
+        
       })
       .on("mousemove", function (event) {
         tooltip.style("top", (event.pageY - 10) + "px")
@@ -116,19 +133,51 @@
       .enter()
       .append("path")
       .attr("d", ribbon)
-      .style("fill", (d) => color(genres[d.target.index]))
+      .style("fill", function (d) {
+        const radius = width / 2 - 100; // Use the same radius as your chord layout
+        const x1 = Math.cos((d.source.startAngle + d.source.endAngle) / 2 - Math.PI / 2) * radius;
+        const y1 = Math.sin((d.source.startAngle + d.source.endAngle) / 2 - Math.PI / 2) * radius;
+        const x2 = Math.cos((d.target.startAngle + d.target.endAngle) / 2 - Math.PI / 2) * radius;
+        const y2 = Math.sin((d.target.startAngle + d.target.endAngle) / 2 - Math.PI / 2) * radius;
+
+        const gradientId = `gradient-${d.source.index}-${d.target.index}`;
+        const gradient = svgElement.append("defs")
+        .append("linearGradient")
+        .attr("id", gradientId)
+        .attr("gradientUnits", "userSpaceOnUse")
+        .attr("x1", x1)
+        .attr("y1", y1)
+        .attr("x2", x2)
+        .attr("y2", y2);
+
+        gradient.append("stop")
+          .attr("offset", "0%")
+          .attr("stop-color", color(genres[d.source.index]));
+
+        gradient.append("stop")
+          .attr("offset", "100%")
+          .attr("stop-color", color(genres[d.target.index]));
+
+        return `url(#${gradientId})`;
+      })
       //.style("stroke", (d) => d3.rgb(color(genres[d.target.index])).darker())
       .on("mouseover", function (event, d) {
         d3.select(this).style("fill", "yellow").raise();
         tooltip.style("visibility", "visible")
           .text(`${genres[d.source.index]} & ${genres[d.target.index]}: ${d.source.value}`);
+        console.log(d.source.index, d.target.index, d.source.startAngle, d.target.startAngle);
+        console.log("correct source", genres[d.source.index]);
+        console.log("correct target", genres[d.target.index]);
       })
       .on("mousemove", function (event) {
         tooltip.style("top", (event.pageY - 10) + "px")
           .style("left", (event.pageX + 10) + "px");
       })
       .on("mouseout", function () {
-        d3.select(this).style("fill", (d) => color(genres[d.target.index]));
+        d3.select(this).style("fill", function (d) {
+          const gradientId = `gradient-${d.source.index}-${d.target.index}`;
+          return `url(#${gradientId})`;
+        });
         tooltip.style("visibility", "hidden");
       });
 
